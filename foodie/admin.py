@@ -2,7 +2,7 @@
 from django.contrib import admin
 
 # Local imports.
-from .models import Recipe, Ingredient, Food, Product, Measurement, MeasurementConversion
+from foodie.models import Recipe, Ingredient, Food, Product, Measurement, MeasurementConversion, Allergen
 
 __author__ = 'Jason Parent'
 
@@ -35,3 +35,8 @@ class MeasurementAdmin(admin.ModelAdmin):
 @admin.register(MeasurementConversion)
 class MeasurementConversionAdmin(admin.ModelAdmin):
     fields = ('nk', 'food', 'weight', 'weight_measurement', 'volume', 'volume_measurement')
+
+
+@admin.register(Allergen)
+class AllergenAdmin(admin.ModelAdmin):
+    fields = ('nk', 'name')

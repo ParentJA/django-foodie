@@ -20,10 +20,43 @@ OUNCE = 'OUNCE'
 POUND = 'POUND'
 
 
-class Recipe(models.Model):
+class NKField(models.CharField):
+    """A unique natural key."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs['max_length'] = 255
+        kwargs['unique'] = True
+
+        super(NKField, self).__init__(*args, **kwargs)
+
+
+class NKMixin(object):
+    def natural_key(self):
+        return [getattr(self, 'nk')]
+
+
+class NKManager(models.Manager):
+    def get_by_natural_key(self, nk):
+        return self.get(nk=nk)
+
+
+class RecipeManager(NKManager):
+    def allergens(self, allergens):
+        # Find all ingredients that contain allergens.
+        food_x_allergen_qs = FoodXAllergen.objects.select_related('food').filter(allergen__in=allergens)
+        foods = set([food_x_allergen.food for food_x_allergen in food_x_allergen_qs])
+        ingredient_qs = Ingredient.objects.select_related('recipe').filter(food__in=foods)
+
+        # Find all recipes that do not have ingredients the contain allergens.
+        return self.exclude(nk__in=[ingredient.recipe for ingredient in ingredient_qs]).distinct()
+
+
+class Recipe(models.Model, NKMixin):
     """A set of instructions that describes how to prepare a culinary dish."""
 
-    nk = models.CharField(max_length=255, unique=True)
+    objects = RecipeManager()
+
+    nk = NKField()
 
     title = models.CharField(max_length=255)
 
@@ -40,10 +73,12 @@ class Recipe(models.Model):
         return self.nk
 
 
-class Ingredient(models.Model):
+class Ingredient(models.Model, NKMixin):
     """A food that forms part of a recipe."""
 
-    nk = models.CharField(max_length=255, unique=True, help_text='e.g. {recipe.nk}$${food.nk}')
+    objects = NKManager()
+
+    nk = NKField(help_text='e.g. {recipe.nk}$${food.nk}')
 
     recipe = models.ForeignKey('foodie.Recipe')
 
@@ -65,10 +100,12 @@ class Ingredient(models.Model):
         return self.nk
 
 
-class Food(models.Model):
+class Food(models.Model, NKMixin):
     """A substance consumed to provide nutritional support for the body."""
 
-    nk = models.CharField(max_length=255, unique=True)
+    objects = NKManager()
+
+    nk = NKField()
 
     name = models.CharField(max_length=255)
 
@@ -79,10 +116,12 @@ class Food(models.Model):
         return self.nk
 
 
-class Product(models.Model):
+class Product(models.Model, NKMixin):
     """A food item for sale."""
 
-    nk = models.CharField(max_length=255, unique=True)
+    objects = NKManager()
+
+    nk = NKField()
 
     food = models.ForeignKey('foodie.Food')
 
@@ -106,7 +145,7 @@ class Product(models.Model):
         return self.price / self.amount
 
 
-class Measurement(models.Model):
+class Measurement(models.Model, NKMixin):
     """A unit of measure."""
 
     TYPE = (
@@ -125,7 +164,9 @@ class Measurement(models.Model):
         (POUND, POUND)
     )
 
-    nk = models.CharField(max_length=255, unique=True)
+    objects = NKManager()
+
+    nk = NKField()
 
     name = models.CharField(max_length=255)
 
@@ -142,7 +183,7 @@ class Measurement(models.Model):
         return self.nk
 
 
-class MeasurementConversion(models.Model):
+class MeasurementConversion(models.Model, NKMixin):
     """A table mapping quantity, weight, and volume measurements to a specific food."""
 
     WEIGHT_CONVERSION = {
@@ -164,7 +205,9 @@ class MeasurementConversion(models.Model):
         VOLUME: VOLUME_CONVERSION
     }
 
-    nk = models.CharField(max_length=255, unique=True)
+    objects = NKManager()
+
+    nk = NKField()
 
     food = models.ForeignKey('foodie.Food')
 
@@ -235,3 +278,39 @@ class MeasurementConversion(models.Model):
             WEIGHT: decimal.Decimal(self.weight),
             VOLUME: decimal.Decimal(self.volume)
         }[measurement_type]
+
+
+class Allergen(models.Model, NKMixin):
+    """A food allergen."""
+
+    objects = NKManager()
+
+    nk = NKField()
+
+    name = models.CharField(max_length=255)
+
+    class Meta(object):
+        app_label = 'foodie'
+
+    def __unicode__(self):
+        return self.nk
+
+
+class FoodXAllergen(models.Model, NKMixin):
+    """Through table between Food and Allergen."""
+
+    objects = NKManager()
+
+    nk = NKField(help_text='e.g. {food.nk}$${allergen.nk}')
+
+    food = models.ForeignKey('foodie.Food')
+
+    allergen = models.ForeignKey('foodie.Allergen')
+
+    rank = models.IntegerField(default=0, help_text='Controls the display order in the UI.')
+
+    class Meta(object):
+        app_label = 'foodie'
+
+    def __unicode__(self):
+        return self.nk

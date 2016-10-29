@@ -1,0 +1,16 @@
+- model: foodie.allergen
+  fields: {nk: MILK, name: milk}
+- model: foodie.allergen
+  fields: {nk: EGGS, name: eggs}
+- model: foodie.allergen
+  fields: {nk: FISH, name: fish}
+- model: foodie.allergen
+  fields: {nk: CRUSTACEAN_SHELLFISH, name: crustacean shellfish}
+- model: foodie.allergen
+  fields: {nk: TREE_NUTS, name: tree nuts}
+- model: foodie.allergen
+  fields: {nk: PEANUTS, name: peanuts}
+- model: foodie.allergen
+  fields: {nk: WHEAT, name: wheat}
+- model: foodie.allergen
+  fields: {nk: SOYBEANS, name: soybeans}
