@@ -2,10 +2,7 @@
 import os
 
 # Third-party imports.
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
+from setuptools import find_packages, setup
 
 __author__ = 'Jason Parent'
 
@@ -22,7 +19,7 @@ setup(
     author='Jason Parent',
     author_email='jason.a.parent@gmail.com',
     url='https://github.com/ParentJA/django-foodie',
-    packages=['foodie'],
+    packages=find_packages(),
     include_package_data=True,
     install_requires=[],
     license="Apache Software License 2.0",
